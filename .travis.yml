@@ -58,6 +58,16 @@ before_script:
   - if [[ `node --version` == v0.12 ]]; then npm i memcpy ; fi
   - if [[ `node --version` == v0.10* ]]; then npm i ursa@0.8.5 ; fi
 
+install:
+  - npm install -g npm
+  - npm install typescript -g
+  - npm ci
+
+# keep the npm cache around to speed up installs
+cache:
+    directories:
+    - "$HOME/.npm"
+
 after_success:
   # only run code coverage on linux and latest nodejs version
   - if [[ $TRAVIS_OS_NAME =~ ^linux$ ]]; then
@@ -68,15 +78,13 @@ after_success:
 
 script:
   - if [[ $TRAVIS_OS_NAME =~ ^osx$ ]];
-    then  npm run testlerna ;
+    then  npm test ;
     else  npm test;
     fi
 
 addons:
   code_climate:
     repo_token: 0860a573fd01a1fbafc298b7c40cd0c1fd8b25e5f53a5e8346d3b42cb40ab48e
-
-
 
 notifications:
   webhooks:

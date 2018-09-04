@@ -8,7 +8,7 @@ const assert = require("node-opcua-assert").assert;
 const util = require("util");
 const EventEmitter = require("events").EventEmitter;
 
-const crypto_utils = require("node-opcua-crypto").crypto_utils;
+const crypto_utils = require("node-opcua-crypto");
 
 const MessageBuilder = require("../message_builder").MessageBuilder;
 const MessageChunker = require("../message_chunker").MessageChunker;
@@ -30,7 +30,7 @@ const OpenSecureChannelRequest = secure_channel_service.OpenSecureChannelRequest
 const OpenSecureChannelResponse = secure_channel_service.OpenSecureChannelResponse;
 const SecurityTokenRequestType = secure_channel_service.SecurityTokenRequestType;
 
-const split_der = require("node-opcua-crypto").crypto_explore_certificate.split_der;
+const split_der = require("node-opcua-crypto").split_der;
 
 assert(MessageSecurityMode);
 assert(ChannelSecurityToken);
@@ -75,6 +75,8 @@ function ServerSecureChannelLayer(options) {
 
     self.__hash = getNextChannelId();
 
+    assert(self.__hash  > 0);
+
     self.parent = options.parent;
 
     self.protocolVersion = 0;
@@ -87,6 +89,7 @@ function ServerSecureChannelLayer(options) {
 
     // uninitialized securityToken
     self.securityToken = { secureChannelId: self.__hash , tokenId: 0 };
+    assert(self.securityToken.secureChannelId > 0);
 
     self.serverNonce = null; // will be created when needed
 
@@ -221,7 +224,7 @@ ServerSecureChannelLayer.prototype.getSignatureLength = function() {
     const self = this;
     const chain = self.getCertificateChain();
     const s = split_der(chain)[0];
-    const cert = crypto_utils.exploreCertificate(s);
+    const cert = crypto_utils.exploreCertificateInfo(s);
     return cert.publicKeyLength; // 1024 bits = 128Bytes or 2048=256Bytes
 };
 
@@ -272,13 +275,16 @@ ServerSecureChannelLayer.prototype._add_new_security_token = function() {
     _stop_security_token_watch_dog.call(self);
     self.lastTokenId += 1;
 
+
+    self.secureChannelId = self.__hash;
+    assert(self.secureChannelId > 0);
+
     const securityToken = new ChannelSecurityToken({
 		secureChannelId: self.__hash,
         tokenId: self.lastTokenId, // todo ?
         createdAt: new Date(), // now
         revisedLifeTime: self.revisedLifeTime
     });
-    self.secureChannelId = self.__hash;
 
 
     assert(!securityToken.expired);
@@ -593,6 +599,8 @@ ServerSecureChannelLayer.prototype.send_response = function(msgType, response, m
 
         chunkSize: self.transport.receiveBufferSize
     };
+
+    assert(options.secureChannelId > 0);
 
     const security_options =
         msgType === "OPN" ? self._get_security_options_for_OPN() : self._get_security_options_for_MSG();
@@ -1075,7 +1083,7 @@ function _check_certificate_validity(certificate) {
 
     // Has SoftwareCertificate passed its issue date and has it not expired ?
     // check dates
-    const cert = crypto_utils.exploreCertificate(certificate);
+    const cert = crypto_utils.exploreCertificateInfo(certificate);
 
     const now = new Date();
 

@@ -205,7 +205,7 @@ function __findEndpoint(endpointUrl, params, callback) {
     const tasks = [
         function (callback) {
             client.on("backoff", function () {
-                console.log("finding Enpoint => reconnecting ");
+                console.log("finding Endpoint => reconnecting ");
             });
             client.connect(endpointUrl, function (err) {
                 if (err) {
@@ -333,7 +333,7 @@ OPCUAClientBase.prototype._recreate_secure_channel = function (callback) {
 
 function _verify_serverCertificate(serverCertificate, callback) {
     // check if certificate is trusted or untrusted
-    const crypto_utils = require("node-opcua-crypto").crypto_utils;
+    const crypto_utils = require("node-opcua-crypto");
 
     const pki_folder = process.cwd() + "/pki";
 
